@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Filtered Results</title>
+</head>
+<body>
+    <h1>Filtered Results</h1>
+    <ul>
+        {% for item in results %}
+            <li>Comment ID: {{ item.id }}</li>
+            <li>Comment Text: {{ item.text }}</li>
+            <li>date: {{ item.date }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

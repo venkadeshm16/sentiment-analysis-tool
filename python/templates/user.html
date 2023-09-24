@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Sentiment Analysis</title>
+    <style>
+        /* Add styles for the navigation bar */
+        nav {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            overflow: hidden;
+        }
+
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        nav ul li {
+            display: inline;
+            margin-right: 20px;
+        }
+
+        nav ul li a {
+            text-decoration: none;
+            padding: 25px 20px;
+            color: #fff;
+        }
+
+        nav ul li a:hover {
+            background-color: #111;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px; /* Set the container's height to the viewport height for vertical centering */
+        }
+
+        textarea {
+            width: 100%; /* Set the width to 100% to occupy the full page width */
+            height: 100px; /* Set the desired height for the textarea */
+            box-sizing: border-box; /* Include padding and border in the width */
+        }
+
+        .info-text {
+            margin-bottom: 10px;
+            display: block;
+            font-size: 24px; /* Adjust the font size as needed */
+        }
+        .comment {
+            background-color: #f2f2f2;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        /* Add a CSS media query for screens smaller than 768px */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column; /* Stack boxes vertically on small screens */
+                height: auto; /* Remove fixed height for small screens */
+            }
+            .box {
+                width: 100%; /* Make boxes full width on small screens */
+                height: auto; /* Adjust height as needed for small screens */
+                margin: 10px 0; /* Add margin between boxes on small screens */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/contact">Contact</a></li>
+        </ul>
+    </nav>
+    <h1>Sentiment Analysis</h1>
+    <div>
+        <form method="POST">
+            <label class="info-text" for="user_comment">Enter a Comment:</label>
+            <textarea name="user_comment" id="user_comment" required></textarea>
+            <input type="submit" value="Analyze">
+        </form>
+    </div>
+    <h2>Comments:</h2>
+    {% for comment in comments %}
+    <div class="comment">
+        <p>{{ comment.text }}</p>
+    </div>
+    {% endfor %}
+
+
+</body>
+
+</html>
