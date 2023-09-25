@@ -37,11 +37,11 @@
 					alt="search-icon">
 			</div>
 		</div>
-        <div class="filter" id="filter">
-            <img src="{{ url_for('static', filename='images/filter.png') }}"
-                    class="dpicn"
-                    alt="filter">
-            </div>
+		<form method="POST" class="date" id="filter-form">
+			Start Date: <input type="date" name="start_date" id="start-date">
+			End Date: <input type="date" name="end_date" id="end-date">
+			<input type="submit" value="Filter">
+		</form>
 			<div class="dp">
 			<img src="{{ url_for('static', filename='images/dp.png') }}"
 					class="dpicn"

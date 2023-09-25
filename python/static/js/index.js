@@ -7,10 +7,27 @@ menuicn.addEventListener("click", () => {
 
 document.addEventListener("DOMContentLoaded", function () {
 	updateCounts();
-
+	var startDateValue;
+	var endDateValue;
 	function updateCounts() {
-		// Make an AJAX request to the /get_counts endpoint
-		fetch('/get_counts')
+		var filterForm = document.getElementById('filter-form');
+		// Add an event listener to the form submission
+		filterForm.addEventListener('submit', function (event) {
+			event.preventDefault(); // Prevent the form from submitting
+	
+			// Get references to the input fields
+			var startDateInput = document.getElementById('start-date');
+			var endDateInput = document.getElementById('end-date');
+	
+			// Access the values of the input fields
+			startDateValue = startDateInput.value;
+			endDateValue = endDateInput.value;
+	
+		});
+		console.log('Start Dates:', startDateValue);
+		console.log('End Dates:', endDateValue);
+		
+		fetch('/get_counts?start_date='+startDateValue+'&end_date='+endDateValue)
 			.then(response => response.json())
 			.then(data => {
 				// Update the counts in the HTML
@@ -101,12 +118,6 @@ document.addEventListener("DOMContentLoaded", function () {
 			// Access the values of the input fields
 			startDateValue = startDateInput.value;
 			endDateValue = endDateInput.value;
-
-			// Use the values as needed
-			console.log('Start Date:', startDateValue);
-			console.log('End Date:', endDateValue);
-
-			// You can now perform further JavaScript actions or send the values to the server using AJAX.
 		});
 		$.ajax({
 			url: '/get_comments?start_date='+startDateValue+'&end_date='+endDateValue, // Replace with your Flask endpoint URL

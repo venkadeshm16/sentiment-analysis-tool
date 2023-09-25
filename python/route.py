@@ -102,23 +102,40 @@ def home():
 @login_required
 def get_counts():
     # Calculate the counts of positive, negative, and neutral comments
+    start_date =request.args.get('start_date')
+    end_date = request.args.get('end_date')
     positive = 0
     negative = 0
     neutral = 0
-    comments = Comment.query.with_entities(Comment.sentiment_label).all()
-    if len(comments) != 0:
-        for comment in comments:
+    if start_date != "undefined" and end_date != "undefined":
+       comments = Comment.query.filter(Comment.date.between(start_date, end_date)).with_entities(Comment.sentiment_label).all()
+       if len(comments) != 0:
+         for comment in comments:
             if comment[0] == "Positive":
                 positive += 1
             elif comment[0] == "Negative":
                 negative += 1
             else:
                 neutral += 1
+       else:
+          print("There are no comments")
+        # Return the counts as JSON
+       return jsonify(positive=positive, negative=negative, neutral=neutral,total_comment=len(comments))
     else:
-        print("There are no comments")
+        comments = Comment.query.with_entities(Comment.sentiment_label).all()
+        if len(comments) != 0:
+            for comment in comments:
+                if comment[0] == "Positive":
+                    positive += 1
+                elif comment[0] == "Negative":
+                    negative += 1
+                else:
+                    neutral += 1
+        else:
+            print("There are no comments")
+        # Return the counts as JSON
+        return jsonify(positive=positive, negative=negative, neutral=neutral,total_comment=len(comments))
 
-    # Return the counts as JSON
-    return jsonify(positive=positive, negative=negative, neutral=neutral,total_comment=len(comments))
     
 @app.route('/get_comments', methods=['GET', 'POST'])
 @login_required
@@ -127,17 +144,17 @@ def get_comments():
     print(request.args.get('start_date'))
     start_date =request.args.get('start_date')
     end_date = request.args.get('end_date')
-    if start_date != "undefined":
+    if start_date != "undefined" and end_date != "undefined":
         print("inside if") 
         comments = Comment.query.filter(Comment.date.between(start_date, end_date)).all()
+        print(len(comments))
         total_comment=[]
         for i in range(len(comments)):
-            if comments[i].sentiment_label == "Neutral":
-                comment={}
-                comment["user"]=comments[i].user
-                comment["comment"]=comments[i].text
-                comment["sentiment_label"]=comments[i].sentiment_label
-                total_comment.append(comment)
+            comment={}
+            comment["user"]=comments[i].user
+            comment["comment"]=comments[i].text
+            comment["sentiment_label"]=comments[i].sentiment_label
+            total_comment.append(comment)
         return total_comment  
     else:
         comments = Comment.query.all()
@@ -198,21 +215,3 @@ def get_neutral():
             total_comment.append(comment)
     return render_template('neutral.html', comments=total_comment)
 
-@app.route('/filter', methods=['GET'])
-def filter_data():
-        # start_date = request.form['start_date']
-        # end_date = request.form['end_date']
-        
-        # Perform a database query based on the start_date and end_date
-        comments = Comment.query.filter(Comment.date.between("2023-09-22", "2023-09-22")).all()
-        print(comments)
-        total_comment=[]
-        my_tuple=[]
-        for i in range(len(comments)):
-            if comments[i].sentiment_label == "Neutral":
-                comment={}
-                comment["user"]=comments[i].user
-                comment["comment"]=comments[i].text
-                comment["sentiment_label"]=comments[i].sentiment_label
-                total_comment.append(comment)
-        return total_comment
