@@ -10,11 +10,12 @@
     <form method="POST" action="/register">
         <label for="username">Username:</label>
         <input type="text" name="username" id="username" required>
+        <span id="usernameError" style="color: red;"></span>
         <br>
         <label for="password">Password:</label>
         <input type="password" name="password" id="password" required>
         <br>
-        <input type="submit" value="Register">
+        <input type="submit" value="Register" id="registerButton" disabled>
     </form>
     <p>Already have an account? <a href="/login">Login here</a></p>
 
@@ -28,5 +29,6 @@
             </ul>
         {% endif %}
     {% endwith %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
 </body>
 </html>

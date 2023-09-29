@@ -1,9 +1,6 @@
 let menuicn = document.querySelector(".menuicn");
 let nav = document.querySelector(".navcontainer");
 
-menuicn.addEventListener("click", () => {
-	nav.classList.toggle("navclose");
-})
 
 document.addEventListener("DOMContentLoaded", function () {
 	updateCounts();
@@ -155,5 +152,25 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 
 	setInterval(updateComments, 5000);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const usernameInput = document.getElementById("username");
+    const usernameError = document.getElementById("usernameError");
+    const registerButton = document.getElementById("registerButton");
+
+    usernameInput.addEventListener("input", function () {
+		console.log( usernameInput.value)
+        const username = usernameInput.value;
+        const usernamePattern = /^[a-zA-Z0-9_]{3,16}$/; // Customize this regex pattern as needed
+
+        if (usernamePattern.test(username)) {
+            usernameError.textContent = "";
+            registerButton.removeAttribute("disabled");
+        } else {
+            usernameError.textContent = "Username must be 3-16 characters long, containing only letters, numbers, or underscores.";
+            registerButton.setAttribute("disabled", "true");
+        }
+    });
 });
 
