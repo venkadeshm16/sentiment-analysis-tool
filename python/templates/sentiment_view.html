@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ sentiment_type.title() }} Comments - Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .logo { font-size: 1.5rem; font-weight: 600; }
+        .nav-buttons { display: flex; gap: 1rem; }
+        .nav-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+        
+        .main-content { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        
+        .page-header {
+            background: white; border-radius: 10px; padding: 2rem; margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;
+        }
+        .page-title { 
+            font-size: 2rem; margin-bottom: 0.5rem;
+            {% if sentiment_type == 'positive' %}color: #27ae60;{% endif %}
+            {% if sentiment_type == 'negative' %}color: #e74c3c;{% endif %}
+            {% if sentiment_type == 'neutral' %}color: #f39c12;{% endif %}
+        }
+        .page-subtitle { color: #666; }
+        
+        .comments-grid { display: grid; gap: 1rem; }
+        .comment-card {
+            background: white; border-radius: 10px; padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.2s;
+            {% if sentiment_type == 'positive' %}border-left: 4px solid #27ae60;{% endif %}
+            {% if sentiment_type == 'negative' %}border-left: 4px solid #e74c3c;{% endif %}
+            {% if sentiment_type == 'neutral' %}border-left: 4px solid #f39c12;{% endif %}
+        }
+        .comment-card:hover { transform: translateY(-2px); }
+        
+        .comment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .comment-user { font-weight: 600; color: #333; }
+        .sentiment-badge {
+            padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500;
+            {% if sentiment_type == 'positive' %}background: #d4edda; color: #155724;{% endif %}
+            {% if sentiment_type == 'negative' %}background: #f8d7da; color: #721c24;{% endif %}
+            {% if sentiment_type == 'neutral' %}background: #fff3cd; color: #856404;{% endif %}
+        }
+        .comment-text { color: #555; line-height: 1.6; }
+        
+        .empty-state {
+            text-align: center; padding: 4rem; color: #666;
+            background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .empty-state i { font-size: 4rem; margin-bottom: 1rem; color: #ccc; }
+        
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 1rem; }
+            .nav-buttons { flex-wrap: wrap; }
+            .main-content { margin: 1rem auto; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-chart-line"></i> Admin Dashboard
+        </div>
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="window.location.href='/home'">
+                <i class="fas fa-home"></i> Dashboard
+            </button>
+            <button class="nav-btn" onclick="window.location.href='/logout'">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">
+                {% if sentiment_type == 'positive' %}<i class="fas fa-smile"></i>{% endif %}
+                {% if sentiment_type == 'negative' %}<i class="fas fa-frown"></i>{% endif %}
+                {% if sentiment_type == 'neutral' %}<i class="fas fa-meh"></i>{% endif %}
+                {{ sentiment_type.title() }} Comments
+            </h1>
+            <p class="page-subtitle">Viewing all {{ sentiment_type }} sentiment comments</p>
+        </div>
+
+        {% if comments %}
+            <div class="comments-grid">
+                {% for comment in comments %}
+                <div class="comment-card">
+                    <div class="comment-header">
+                        <div class="comment-user">
+                            <i class="fas fa-user"></i> {{ comment.user }}
+                        </div>
+                        <div class="sentiment-badge">
+                            {% if sentiment_type == 'positive' %}<i class="fas fa-smile"></i>{% endif %}
+                            {% if sentiment_type == 'negative' %}<i class="fas fa-frown"></i>{% endif %}
+                            {% if sentiment_type == 'neutral' %}<i class="fas fa-meh"></i>{% endif %}
+                            {{ comment.sentiment_label }}
+                        </div>
+                    </div>
+                    <div class="comment-text">{{ comment.comment }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-comments"></i>
+                <h3>No {{ sentiment_type }} comments found</h3>
+                <p>There are currently no comments with {{ sentiment_type }} sentiment.</p>
+            </div>
+        {% endif %}
+    </main>
+</body>
+</html>

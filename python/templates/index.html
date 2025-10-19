@@ -1,161 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-	<meta charset="UTF-8">
-	<meta http-equiv="X-UA-Compatible"
-		content="IE=edge">
-	<meta name="viewport"
-		content="width=device-width,
-				initial-scale=1.0">
-	<title>AdminDashBoard</title>
-	<link rel="stylesheet"
-		href="{{ url_for('static', filename='css/style.css') }}">
-	<link rel="stylesheet"
-		href="{{ url_for('static', filename='css/responsive.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Sentiment Analysis</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .logo { font-size: 1.5rem; font-weight: 600; }
+        .filter-form { display: flex; gap: 1rem; align-items: center; }
+        .filter-form input { padding: 0.5rem; border: none; border-radius: 5px; }
+        .filter-form button { background: #fff; color: #667eea; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+        .user-menu { display: flex; align-items: center; gap: 1rem; }
+        .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+        
+        .dashboard { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card {
+            background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s; cursor: pointer;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card.total { border-left: 4px solid #3498db; }
+        .stat-card.positive { border-left: 4px solid #27ae60; }
+        .stat-card.negative { border-left: 4px solid #e74c3c; }
+        .stat-card.neutral { border-left: 4px solid #f39c12; }
+        .stat-number { font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .stat-label { color: #666; font-size: 0.9rem; }
+        
+        .comments-section {
+            background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .section-header {
+            background: #f8f9fa; padding: 1.5rem; border-bottom: 1px solid #e9ecef;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .section-title { font-size: 1.2rem; font-weight: 600; }
+        .comments-list { max-height: 400px; overflow-y: auto; }
+        .comment-item {
+            padding: 1rem 1.5rem; border-bottom: 1px solid #f0f0f0;
+            display: grid; grid-template-columns: 1fr 2fr auto; gap: 1rem; align-items: center;
+        }
+        .comment-user { font-weight: 500; }
+        .comment-text { color: #666; }
+        .sentiment-badge {
+            padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500;
+            text-align: center; min-width: 80px;
+        }
+        .sentiment-positive { background: #d4edda; color: #155724; }
+        .sentiment-negative { background: #f8d7da; color: #721c24; }
+        .sentiment-neutral { background: #fff3cd; color: #856404; }
+        
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 1rem; }
+            .filter-form { flex-wrap: wrap; }
+            .comment-item { grid-template-columns: 1fr; gap: 0.5rem; }
+        }
+    </style>
 </head>
-
 <body>
+    <header class="header">
+        <div class="logo"><i class="fas fa-chart-line"></i> Admin Dashboard</div>
+        <form class="filter-form" id="filter-form">
+            <input type="date" id="start-date" name="start_date">
+            <input type="date" id="end-date" name="end_date">
+            <button type="submit"><i class="fas fa-filter"></i> Filter</button>
+        </form>
+        <div class="user-menu">
+            <button class="logout-btn" id="logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </header>
 
-	<!-- for header part -->
-	<header>
+    <main class="dashboard">
+        <div class="stats-grid">
+            <div class="stat-card total" id="home">
+                <div class="stat-number" id="total-count">0</div>
+                <div class="stat-label">Total Comments</div>
+            </div>
+            <div class="stat-card positive" id="positive">
+                <div class="stat-number" id="positive-count">0</div>
+                <div class="stat-label">Positive</div>
+            </div>
+            <div class="stat-card negative" id="negative">
+                <div class="stat-number" id="negative-count">0</div>
+                <div class="stat-label">Negative</div>
+            </div>
+            <div class="stat-card neutral" id="neutral">
+                <div class="stat-number" id="neutral-count">0</div>
+                <div class="stat-label">Neutral</div>
+            </div>
+        </div>
 
-		<div class="logosec">
-			<div class="logo">AdminDashBoard</div>
-			<img src="{{ url_for('static', filename='images/menu-icon.png') }}"
-				class="icn menuicn"
-				id="menuicn"
-				alt="menu-icon">
-		</div>
+        <div class="comments-section">
+            <div class="section-header">
+                <h2 class="section-title">Recent Comments</h2>
+            </div>
+            <div class="comments-list" id="update-comments">
+                <!-- Comments will be loaded here -->
+            </div>
+        </div>
+    </main>
 
-		<div class="searchbar">
-			<input type="text"
-				placeholder="Search">
-			<div class="searchbtn">
-			<img src="{{ url_for('static', filename='images/search-icon.png') }}"
-					class="icn srchicn"
-					alt="search-icon">
-			</div>
-		</div>
-	</div>
-	<!-- <div class="filter" id="filter">
-	<img src="{{ url_for('static', filename='images/filter.png') }}"
-			class="dpicn"
-			alt="filter">
-	</div> -->
-	<form method="POST" class="date" id="filter-form">
-		Start Date: <input type="date" name="start_date" id="start-date">
-		End Date: <input type="date" name="end_date" id="end-date">
-		<input type="submit" value="Filter">
-	</form>
-		</div>
-			<div class="dp">
-			<img src="{{ url_for('static', filename='images/dp.png') }}"
-					class="dpicn"
-					alt="dp">
-			</div>
-</div>
-
-	</header>
-	<div class="main-container">
-		<div class="navcontainer">
-			<nav class="nav">
-				<div class="nav-upper-options">
-					<div class="nav-option option1">
-						<img src="{{ url_for('static', filename='images/dashboard.png') }}"
-							class="nav-img"
-							alt="dashboard">
-						<h3> Dashboard</h3>
-					</div>
-
-					<div class="nav-option logout" id="logout">
-						<img src="{{ url_for('static', filename='images/logout.png') }}"
-							class="nav-img"
-							alt="logout">
-						<h3>Logout</h3>
-					</div>
-
-				</div>
-			</nav>
-		</div>
-		<div class="main">
-
-			<div class="searchbar2">
-				<input type="text"
-					name=""
-					id=""
-					placeholder="Search">
-				<div class="searchbtn">
-				<img src="{{ url_for('static', filename='images/search-icon.png') }}"
-						class="icn srchicn"
-						alt="search-button">
-				</div>
-			</div>
-			<div class="box-container">
-
-				<div class="box box1" id="home">
-					<div class="text">
-						<h2 class="topic-heading" id="total-count"></h2>
-						<h2 class="topic">Total comments</h2>
-					</div>
-				</div>
-
-				<div class="box box2" id="positive">
-					<div class="text">
-						<h2 class="topic-heading" id="positive-count"></h2>
-						<h2 class="topic">Positive</h2>
-					</div>
-				</div>
-
-				<div class="box box3" id="negative">
-					<div class="text">
-						<h2 class="topic-heading" id="negative-count"></h2>
-						<h2 class="topic">Negative</h2>
-					</div>
-				</div>
-
-				<div class="box box4" id="neutral">
-					<div class="text">
-						<h2 class="topic-heading" id="neutral-count"></h2>
-						<h2 class="topic">Neutral</h2>
-					</div>
-				</div>
-			<div class="report-container">
-				<div class="report-header">
-					<h1 class="recent-Articles">Recent Comments</h1>
-					<button class="view">View All</button>
-				</div>
-
-				<div class="report-body">
-					<div class="report-topic-heading">
-						<h3 class="t-op">User</h3>
-						<h3 class="t-op">Comments</h3>
-						<h3 class="t-op">Status</h3>
-					</div>
-					<div class="items" id="update-comments">
-						<!-- {% for comment in comments %}
-							<div class="item1">
-								<h3 class="t-op-nextlvl">{{ comment.user }}</h3>
-								<h3 class="t-op-nextlvl">{{ comment.text }}</h3>
-								{% set value = "green" %}
-								{% if comment.sentiment_label == "Positive" %}
-									{% set value = "green" %}
-								{% elif comment.sentiment_label == "Negative" %}
-									{% set value = "red" %}
-								{% else %}
-									{% set value = "orange" %}
-								{% endif %}
-								<h3 class="t-op-nextlvl label-tag" style="background-color: {{ value }};">{{ comment.sentiment_label }}</h3>
-							</div>
-						{% endfor %} -->
-					</div>
-					
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<script src="{{ url_for('static', filename='js/index.js') }}"></script>
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let startDate, endDate;
+            
+            function updateCounts() {
+                const url = startDate && endDate ? 
+                    `/get_counts?start_date=${startDate}&end_date=${endDate}` : '/get_counts';
+                
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('positive-count').textContent = data.positive;
+                        document.getElementById('negative-count').textContent = data.negative;
+                        document.getElementById('neutral-count').textContent = data.neutral;
+                        document.getElementById('total-count').textContent = data.total_comment;
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+            
+            function updateComments() {
+                const url = startDate && endDate ? 
+                    `/get_comments?start_date=${startDate}&end_date=${endDate}` : '/get_comments';
+                
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('update-comments');
+                        container.innerHTML = '';
+                        
+                        data.forEach(comment => {
+                            const sentimentClass = `sentiment-${comment.sentiment_label.toLowerCase()}`;
+                            const item = document.createElement('div');
+                            item.className = 'comment-item';
+                            item.innerHTML = `
+                                <div class="comment-user">${comment.user}</div>
+                                <div class="comment-text">${comment.comment}</div>
+                                <div class="sentiment-badge ${sentimentClass}">${comment.sentiment_label}</div>
+                            `;
+                            container.appendChild(item);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+            
+            document.getElementById('filter-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                startDate = document.getElementById('start-date').value;
+                endDate = document.getElementById('end-date').value;
+                updateCounts();
+                updateComments();
+            });
+            
+            document.getElementById('logout').addEventListener('click', () => {
+                window.location.href = '/logout';
+            });
+            
+            ['positive', 'negative', 'neutral'].forEach(type => {
+                document.getElementById(type).addEventListener('click', () => {
+                    window.location.href = `/${type}`;
+                });
+            });
+            
+            updateCounts();
+            updateComments();
+            setInterval(() => { updateCounts(); updateComments(); }, 5000);
+        });
+    </script>
 </body>
 </html>

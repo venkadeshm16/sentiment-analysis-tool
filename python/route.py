@@ -88,7 +88,7 @@ def home():
         db.session.commit()
         return redirect(url_for('home'))  # Redirect to clear the form
 
-    # Retrieve all comments from the database
+    # Retrieve comments based on user role
     if current_user.role == 'admin':
         comments = Comment.query.all()
         return render_template('index.html', comments=comments)
@@ -101,117 +101,53 @@ def home():
 @app.route('/get_counts', methods=['GET'])
 @login_required
 def get_counts():
-    # Calculate the counts of positive, negative, and neutral comments
-    start_date =request.args.get('start_date')
+    start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-    positive = 0
-    negative = 0
-    neutral = 0
-    if start_date != "undefined" and end_date != "undefined":
-       comments = Comment.query.filter(Comment.date.between(start_date, end_date)).with_entities(Comment.sentiment_label).all()
-       if len(comments) != 0:
-         for comment in comments:
-            if comment[0] == "Positive":
-                positive += 1
-            elif comment[0] == "Negative":
-                negative += 1
-            else:
-                neutral += 1
-       else:
-          print("There are no comments")
-        # Return the counts as JSON
-       return jsonify(positive=positive, negative=negative, neutral=neutral,total_comment=len(comments))
+    
+    if start_date and end_date:
+        comments = Comment.query.filter(Comment.date.between(start_date, end_date)).with_entities(Comment.sentiment_label).all()
     else:
         comments = Comment.query.with_entities(Comment.sentiment_label).all()
-        if len(comments) != 0:
-            for comment in comments:
-                if comment[0] == "Positive":
-                    positive += 1
-                elif comment[0] == "Negative":
-                    negative += 1
-                else:
-                    neutral += 1
-        else:
-            print("There are no comments")
-        # Return the counts as JSON
-        return jsonify(positive=positive, negative=negative, neutral=neutral,total_comment=len(comments))
+    
+    positive = sum(1 for c in comments if c[0] == "Positive")
+    negative = sum(1 for c in comments if c[0] == "Negative")
+    neutral = sum(1 for c in comments if c[0] == "Neutral")
+    
+    return jsonify(positive=positive, negative=negative, neutral=neutral, total_comment=len(comments))
 
     
-@app.route('/get_comments', methods=['GET', 'POST'])
+@app.route('/get_comments', methods=['GET'])
 @login_required
 def get_comments():
-    # Calculate the counts of positive, negative, and neutral comments
-    print(request.args.get('start_date'))
-    start_date =request.args.get('start_date')
+    start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-    if start_date != "undefined" and end_date != "undefined":
-        print("inside if") 
+    
+    if start_date and end_date:
         comments = Comment.query.filter(Comment.date.between(start_date, end_date)).all()
-        print(len(comments))
-        total_comment=[]
-        for i in range(len(comments)):
-            comment={}
-            comment["user"]=comments[i].user
-            comment["comment"]=comments[i].text
-            comment["sentiment_label"]=comments[i].sentiment_label
-            total_comment.append(comment)
-        return total_comment  
     else:
         comments = Comment.query.all()
-        total_comment=[]
-        my_tuple=[]
-        for i in range(len(comments)):
-            comment={}
-            comment["user"]=comments[i].user
-            comment["comment"]=comments[i].text
-            comment["sentiment_label"]=comments[i].sentiment_label
-            total_comment.append(comment)
-        # Return the counts as JSON
-        return total_comment
+    
+    return [{
+        "user": c.user,
+        "comment": c.text,
+        "sentiment_label": c.sentiment_label
+    } for c in comments]
 
 @app.route('/positive', methods=['GET'])
 @login_required
 def get_positive():
-    comments = Comment.query.all()
-    total_comment=[]
-    my_tuple=[]
-    for i in range(len(comments)):
-        if comments[i].sentiment_label == "Positive":
-            comment={}
-            comment["user"]=comments[i].user
-            comment["comment"]=comments[i].text
-            comment["sentiment_label"]=comments[i].sentiment_label
-            total_comment.append(comment)
-    return render_template('positive.html', comments=total_comment)
+    comments = Comment.query.filter_by(sentiment_label='Positive').all()
+    return render_template('sentiment_view.html', comments=comments, sentiment_type='positive')
 
 @app.route('/negative', methods=['GET'])
 @login_required
 def get_negative():
-    comments = Comment.query.all()
-    total_comment=[]
-    my_tuple=[]
-    for i in range(len(comments)):
-        if comments[i].sentiment_label == "Negative":
-            comment={}
-            comment["user"]=comments[i].user
-            comment["comment"]=comments[i].text
-            comment["sentiment_label"]=comments[i].sentiment_label
-            total_comment.append(comment)
-    return render_template('negative.html', comments=total_comment)
-
+    comments = Comment.query.filter_by(sentiment_label='Negative').all()
+    return render_template('sentiment_view.html', comments=comments, sentiment_type='negative')
 
 @app.route('/neutral', methods=['GET'])
 @login_required
 def get_neutral():
-    comments = Comment.query.all()
-    total_comment=[]
-    my_tuple=[]
-    for i in range(len(comments)):
-        if comments[i].sentiment_label == "Neutral":
-            comment={}
-            comment["user"]=comments[i].user
-            comment["comment"]=comments[i].text
-            comment["sentiment_label"]=comments[i].sentiment_label
-            total_comment.append(comment)
-    return render_template('neutral.html', comments=total_comment)
+    comments = Comment.query.filter_by(sentiment_label='Neutral').all()
+    return render_template('sentiment_view.html', comments=comments, sentiment_type='neutral')
 
