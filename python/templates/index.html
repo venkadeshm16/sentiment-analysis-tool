@@ -99,6 +99,30 @@
             </div>
         </div>
 
+        <div class="analysis-section" style="margin-bottom: 2rem;">
+            <div style="background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 1.5rem;">
+                <h2 style="margin-bottom: 1rem; color: #333;">CSV Analysis Tools</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <button onclick="loadChart('pie')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 1rem; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <i class="fas fa-chart-pie" style="margin-right: 0.5rem;"></i>Pie Chart
+                    </button>
+                    <button onclick="loadChart('comparison')" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; padding: 1rem; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <i class="fas fa-chart-bar" style="margin-right: 0.5rem;"></i>Comparison Chart
+                    </button>
+                    <button onclick="loadChart('accuracy')" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; padding: 1rem; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <i class="fas fa-bullseye" style="margin-right: 0.5rem;"></i>Model Accuracy
+                    </button>
+                </div>
+                <div id="results-section" style="margin-top: 1rem; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;">
+                    <div id="loading" style="display: none; text-align: center; padding: 2rem;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #667eea;"></i>
+                        <p style="margin-top: 1rem; color: #666;">Loading...</p>
+                    </div>
+                    <div id="results-content" style="padding: 1rem; background: #f8f9fa; border-radius: 8px;"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="comments-section">
             <div class="section-header">
                 <h2 class="section-title">Recent Comments</h2>
@@ -173,8 +197,103 @@
             
             updateCounts();
             updateComments();
-            setInterval(() => { updateCounts(); updateComments(); }, 5000);
+            setInterval(() => { updateCounts(); updateComments(); }, 60000);
         });
+        
+        const chartCache = {};
+        
+        function loadChart(type) {
+            const resultsSection = document.getElementById('results-section');
+            const loading = document.getElementById('loading');
+            const content = document.getElementById('results-content');
+            
+            // Check if already cached in current session
+            if (chartCache[type]) {
+                loading.style.display = 'none';
+                content.innerHTML = chartCache[type].content;
+                resultsSection.style.maxHeight = chartCache[type].height;
+                return;
+            }
+            
+            // Show loading and expand section
+            loading.style.display = 'block';
+            content.innerHTML = '';
+            resultsSection.style.maxHeight = '150px';
+            
+            if (type === 'pie') {
+                fetch('/csv_pie_chart')
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        loading.style.display = 'none';
+                        const imageUrl = URL.createObjectURL(blob);
+                        const htmlContent = `<div style="text-align: center;"><img src="${imageUrl}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>`;
+                        content.innerHTML = htmlContent;
+                        resultsSection.style.maxHeight = '700px';
+                        chartCache[type] = { content: htmlContent, height: '700px' };
+                    })
+                    .catch(error => showError(error));
+            } else if (type === 'comparison') {
+                fetch('/comparison_chart')
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        loading.style.display = 'none';
+                        const imageUrl = URL.createObjectURL(blob);
+                        const htmlContent = `<div style="text-align: center;"><img src="${imageUrl}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>`;
+                        content.innerHTML = htmlContent;
+                        resultsSection.style.maxHeight = '700px';
+                        chartCache[type] = { content: htmlContent, height: '700px' };
+                    })
+                    .catch(error => showError(error));
+            } else if (type === 'accuracy') {
+                fetch('/model_accuracy')
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(data => {
+                        loading.style.display = 'none';
+                        const htmlContent = `
+                            <h3 style="color: #333; margin-bottom: 1rem;">Model Accuracy Report</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">
+                                <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><strong>Overall:</strong> ${data.overall_accuracy}%</div>
+                                <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><strong>Samples:</strong> ${data.total_samples}</div>
+                                <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><strong>Correct:</strong> ${data.correct_predictions}</div>
+                                <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><strong>Time:</strong> ${data.prediction_time_ms}ms</div>
+                            </div>
+                            <div style="display: grid; gap: 0.5rem;">
+                                <div style="padding: 1rem; background: #d4edda; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <strong>Positive:</strong> ${data.label_performance.Positive.accuracy_percentage.toFixed(2)}% (${data.label_performance.Positive.correct_predictions}/${data.label_performance.Positive.actual_count})
+                                </div>
+                                <div style="padding: 1rem; background: #f8d7da; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <strong>Negative:</strong> ${data.label_performance.Negative.accuracy_percentage.toFixed(2)}% (${data.label_performance.Negative.correct_predictions}/${data.label_performance.Negative.actual_count})
+                                </div>
+                                <div style="padding: 1rem; background: #fff3cd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <strong>Neutral:</strong> ${data.label_performance.Neutral.accuracy_percentage.toFixed(2)}% (${data.label_performance.Neutral.correct_predictions}/${data.label_performance.Neutral.actual_count})
+                                </div>
+                            </div>
+                        `;
+                        content.innerHTML = htmlContent;
+                        resultsSection.style.maxHeight = '600px';
+                        chartCache[type] = { content: htmlContent, height: '600px' };
+                    })
+                    .catch(error => showError(error));
+            }
+        }
+        
+        function showError(error) {
+            const loading = document.getElementById('loading');
+            const content = document.getElementById('results-content');
+            const resultsSection = document.getElementById('results-section');
+            loading.style.display = 'none';
+            content.innerHTML = `<div style="color: #e74c3c; text-align: center; padding: 2rem; background: #fff5f5; border-radius: 8px; border: 1px solid #fed7d7;"><i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>Error loading data: ${error.message}</div>`;
+            resultsSection.style.maxHeight = '200px';
+        }
     </script>
 </body>
 </html>

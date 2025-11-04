@@ -3,6 +3,15 @@ from app import app, db
 from textblob import TextBlob
 from db import Comment , User
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import pandas as pd
+import io
+import os
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+from collections import Counter
+import time
+import logging
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -67,12 +76,15 @@ def analyze_comment(comment):
     analysis = TextBlob(comment)
     analysis = analysis.correct()
     sentiment_score = analysis.sentiment.polarity
-    if sentiment_score > 0:
+    
+    # Wider neutral threshold
+    if sentiment_score > 0.3:
         sentiment_label = 'Positive'
-    elif sentiment_score < 0:
+    elif sentiment_score < -0.3:
         sentiment_label = 'Negative'
     else:
         sentiment_label = 'Neutral'
+    
     return sentiment_score, sentiment_label , str(analysis)
 
 @app.route('/home', methods=['GET', 'POST'])
@@ -150,4 +162,155 @@ def get_negative():
 def get_neutral():
     comments = Comment.query.filter_by(sentiment_label='Neutral').all()
     return render_template('sentiment_view.html', comments=comments, sentiment_type='neutral')
+
+@app.route('/csv_pie_chart', methods=['GET'])
+@login_required
+def csv_pie_chart():
+    start_time = time.time()
+    app.logger.info(f"CSV pie chart request received from user: {current_user.username}")
+    
+    try:
+        csv_path = os.path.join(os.path.dirname(__file__), 'testdata.csv')
+        df = pd.read_csv(csv_path)
+        
+        predictions = []
+        for _, row in df.iterrows():
+            _, predicted_label, _ = analyze_comment(str(row['A']))
+            predictions.append(predicted_label)
+        
+        counts = Counter(predictions)
+        labels = list(counts.keys())
+        sizes = list(counts.values())
+        colors = ['#ff9999', '#66b3ff', '#99ff99']
+        
+        plt.figure(figsize=(8, 6))
+        plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+        plt.title('Sentiment Analysis Predictions')
+        
+        chart_path = os.path.join(os.path.dirname(__file__), 'static', 'csv_pie_chart.png')
+        os.makedirs(os.path.dirname(chart_path), exist_ok=True)
+        plt.savefig(chart_path)
+        plt.close()
+        
+        generation_time = round((time.time() - start_time) * 1000, 2)
+        app.logger.info(f"CSV pie chart generated in {generation_time}ms for user: {current_user.username}")
+        return send_from_directory('static', 'csv_pie_chart.png')
+    
+    except Exception as e:
+        app.logger.error(f"CSV pie chart error for user {current_user.username}: {str(e)}")
+        return jsonify({'error': f'Error generating chart: {str(e)}'}), 500
+
+@app.route('/comparison_chart', methods=['GET'])
+@login_required
+def comparison_chart():
+    start_time = time.time()
+    app.logger.info(f"Comparison chart request received from user: {current_user.username}")
+    
+    try:
+        csv_path = os.path.join(os.path.dirname(__file__), 'testdata.csv')
+        df = pd.read_csv(csv_path)
+        
+        if 'B' not in df.columns:
+            return jsonify({'error': 'Column B (actual values) not found'}), 400
+        
+        actual = []
+        predicted = []
+        
+        for _, row in df.iterrows():
+            _, predicted_label, _ = analyze_comment(str(row['A']))
+            actual.append(str(row['B']))
+            predicted.append(predicted_label)
+        
+        actual_counts = Counter(actual)
+        predicted_counts = Counter(predicted)
+        
+        labels = ['Positive', 'Negative', 'Neutral']
+        actual_values = [actual_counts.get(label, 0) for label in labels]
+        predicted_values = [predicted_counts.get(label, 0) for label in labels]
+        
+        x = range(len(labels))
+        width = 0.35
+        
+        plt.figure(figsize=(10, 6))
+        plt.bar([i - width/2 for i in x], actual_values, width, label='Actual', color='#ff9999')
+        plt.bar([i + width/2 for i in x], predicted_values, width, label='Predicted', color='#66b3ff')
+        
+        plt.xlabel('Sentiment')
+        plt.ylabel('Count')
+        plt.title('Actual vs Predicted Sentiment Analysis')
+        plt.xticks(x, labels)
+        plt.legend()
+        
+        chart_path = os.path.join(os.path.dirname(__file__), 'static', 'comparison_chart.png')
+        os.makedirs(os.path.dirname(chart_path), exist_ok=True)
+        plt.savefig(chart_path)
+        plt.close()
+        
+        generation_time = round((time.time() - start_time) * 1000, 2)
+        app.logger.info(f"Comparison chart generated in {generation_time}ms for user: {current_user.username}")
+        return send_from_directory('static', 'comparison_chart.png')
+    
+    except Exception as e:
+        app.logger.error(f"Comparison chart error for user {current_user.username}: {str(e)}")
+        return jsonify({'error': f'Error generating comparison chart: {str(e)}'}), 500
+
+@app.route('/model_accuracy', methods=['GET'])
+@login_required
+def model_accuracy():
+    start_time = time.time()
+    app.logger.info(f"Model accuracy request received from user: {current_user.username}")
+    
+    try:
+        csv_path = os.path.join(os.path.dirname(__file__), 'testdata.csv')
+        df = pd.read_csv(csv_path)
+        
+        if 'B' not in df.columns:
+            return jsonify({'error': 'Column B (actual values) not found'}), 400
+        
+        actual = []
+        predicted = []
+        correct_predictions = 0
+        
+        for _, row in df.iterrows():
+            _, predicted_label, _ = analyze_comment(str(row['A']))
+            actual_label = str(row['B'])
+            
+            actual.append(actual_label)
+            predicted.append(predicted_label)
+            
+            if actual_label == predicted_label:
+                correct_predictions += 1
+        
+        total_samples = len(actual)
+        overall_accuracy = (correct_predictions / total_samples) * 100
+        
+        # Count actual labels
+        actual_counts = Counter(actual)
+        
+        # Calculate per-label accuracy
+        label_accuracy = {}
+        for label in ['Positive', 'Negative', 'Neutral']:
+            label_correct = sum(1 for a, p in zip(actual, predicted) if a == label and a == p)
+            label_total = actual_counts.get(label, 0)
+            label_accuracy[label] = {
+                'actual_count': label_total,
+                'correct_predictions': label_correct,
+                'accuracy_percentage': (label_correct / label_total * 100) if label_total > 0 else 0
+            }
+        
+        prediction_time = round((time.time() - start_time) * 1000, 2)
+        app.logger.info(f"Model accuracy calculated in {prediction_time}ms for user: {current_user.username} - Overall: {round(overall_accuracy, 2)}%")
+        
+        return jsonify({
+            'total_samples': total_samples,
+            'overall_accuracy': round(overall_accuracy, 2),
+            'correct_predictions': correct_predictions,
+            'incorrect_predictions': total_samples - correct_predictions,
+            'label_performance': label_accuracy,
+            'prediction_time_ms': prediction_time
+        })
+    
+    except Exception as e:
+        app.logger.error(f"Model accuracy error for user {current_user.username}: {str(e)}")
+        return jsonify({'error': f'Error calculating accuracy: {str(e)}'}), 500
 
