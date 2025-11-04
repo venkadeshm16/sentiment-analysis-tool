@@ -1,6 +1,19 @@
-FROM python:3.10.0-alpine
-COPY python /python
-COPY requirements.txt /python
+FROM python:3.10-slim
+
 WORKDIR /python
-RUN pip3 install -r requirements.txt
+
+# System deps for scientific Python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY python/ .
+
+EXPOSE 5000
+
 CMD ["python", "app.py"]
+
+
