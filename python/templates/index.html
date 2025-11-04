@@ -200,20 +200,10 @@
             setInterval(() => { updateCounts(); updateComments(); }, 60000);
         });
         
-        const chartCache = {};
-        
         function loadChart(type) {
             const resultsSection = document.getElementById('results-section');
             const loading = document.getElementById('loading');
             const content = document.getElementById('results-content');
-            
-            // Check if already cached in current session
-            if (chartCache[type]) {
-                loading.style.display = 'none';
-                content.innerHTML = chartCache[type].content;
-                resultsSection.style.maxHeight = chartCache[type].height;
-                return;
-            }
             
             // Show loading and expand section
             loading.style.display = 'block';
@@ -232,7 +222,6 @@
                         const htmlContent = `<div style="text-align: center;"><img src="${imageUrl}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>`;
                         content.innerHTML = htmlContent;
                         resultsSection.style.maxHeight = '700px';
-                        chartCache[type] = { content: htmlContent, height: '700px' };
                     })
                     .catch(error => showError(error));
             } else if (type === 'comparison') {
@@ -247,7 +236,6 @@
                         const htmlContent = `<div style="text-align: center;"><img src="${imageUrl}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>`;
                         content.innerHTML = htmlContent;
                         resultsSection.style.maxHeight = '700px';
-                        chartCache[type] = { content: htmlContent, height: '700px' };
                     })
                     .catch(error => showError(error));
             } else if (type === 'accuracy') {
@@ -280,7 +268,6 @@
                         `;
                         content.innerHTML = htmlContent;
                         resultsSection.style.maxHeight = '600px';
-                        chartCache[type] = { content: htmlContent, height: '600px' };
                     })
                     .catch(error => showError(error));
             }

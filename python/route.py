@@ -12,6 +12,10 @@ import matplotlib.pyplot as plt
 from collections import Counter
 import time
 import logging
+
+# Backend cache for chart results
+chart_cache = {}
+
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -166,6 +170,13 @@ def get_neutral():
 @app.route('/csv_pie_chart', methods=['GET'])
 @login_required
 def csv_pie_chart():
+    cache_key = 'csv_pie_chart'
+    
+    # Check cache first
+    if cache_key in chart_cache:
+        app.logger.info(f"CSV pie chart served from cache for user: {current_user.username}")
+        return send_from_directory('static', 'csv_pie_chart.png')
+    
     start_time = time.time()
     app.logger.info(f"CSV pie chart request received from user: {current_user.username}")
     
@@ -192,6 +203,9 @@ def csv_pie_chart():
         plt.savefig(chart_path)
         plt.close()
         
+        # Cache the result
+        chart_cache[cache_key] = True
+        
         generation_time = round((time.time() - start_time) * 1000, 2)
         app.logger.info(f"CSV pie chart generated in {generation_time}ms for user: {current_user.username}")
         return send_from_directory('static', 'csv_pie_chart.png')
@@ -203,6 +217,13 @@ def csv_pie_chart():
 @app.route('/comparison_chart', methods=['GET'])
 @login_required
 def comparison_chart():
+    cache_key = 'comparison_chart'
+    
+    # Check cache first
+    if cache_key in chart_cache:
+        app.logger.info(f"Comparison chart served from cache for user: {current_user.username}")
+        return send_from_directory('static', 'comparison_chart.png')
+    
     start_time = time.time()
     app.logger.info(f"Comparison chart request received from user: {current_user.username}")
     
@@ -246,6 +267,9 @@ def comparison_chart():
         plt.savefig(chart_path)
         plt.close()
         
+        # Cache the result
+        chart_cache[cache_key] = True
+        
         generation_time = round((time.time() - start_time) * 1000, 2)
         app.logger.info(f"Comparison chart generated in {generation_time}ms for user: {current_user.username}")
         return send_from_directory('static', 'comparison_chart.png')
@@ -257,6 +281,13 @@ def comparison_chart():
 @app.route('/model_accuracy', methods=['GET'])
 @login_required
 def model_accuracy():
+    cache_key = 'model_accuracy'
+    
+    # Check cache first
+    if cache_key in chart_cache:
+        app.logger.info(f"Model accuracy served from cache for user: {current_user.username}")
+        return jsonify(chart_cache[cache_key])
+    
     start_time = time.time()
     app.logger.info(f"Model accuracy request received from user: {current_user.username}")
     
@@ -301,14 +332,19 @@ def model_accuracy():
         prediction_time = round((time.time() - start_time) * 1000, 2)
         app.logger.info(f"Model accuracy calculated in {prediction_time}ms for user: {current_user.username} - Overall: {round(overall_accuracy, 2)}%")
         
-        return jsonify({
+        result = {
             'total_samples': total_samples,
             'overall_accuracy': round(overall_accuracy, 2),
             'correct_predictions': correct_predictions,
             'incorrect_predictions': total_samples - correct_predictions,
             'label_performance': label_accuracy,
             'prediction_time_ms': prediction_time
-        })
+        }
+        
+        # Cache the result
+        chart_cache[cache_key] = result
+        
+        return jsonify(result)
     
     except Exception as e:
         app.logger.error(f"Model accuracy error for user {current_user.username}: {str(e)}")
