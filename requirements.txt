@@ -4,3 +4,4 @@ textblob
 sqlalchemy
 flask_login
 pandas
+matplotlib
