@@ -3,3 +3,4 @@ flask_sqlalchemy
 textblob
 sqlalchemy
 flask_login
+pandas
